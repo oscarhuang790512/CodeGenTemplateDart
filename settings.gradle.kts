@@ -1,0 +1,1 @@
+rootProject.name = "code_gen_template"
