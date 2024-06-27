@@ -33,6 +33,8 @@ Using 10 Steps:
 
 10. 如果要測試執行結果可以在 {Package Name} 裡面執行 build_runner 的 CLI
 
-dart run build_runner build -d -v  #執行build code並印出產生細節 log
-dart run build_runner watch -d -v  #執行build code並印出產生細節 log, 期間不間斷等待有改動就會執行產 Code
-dart run build_runner doctor       #檢查 build runner 狀態
+    <code>dart run build_runner build -d -v</code>  #執行build code並印出產生細節 log
+
+    <code>dart run build_runner watch -d -v</code>  #執行build code並印出產生細節 log, 期間不間斷等待有改動就會執行產 Code
+
+    <code>dart run build_runner doctor</code>       #檢查 build runner 狀態
