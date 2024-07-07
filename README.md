@@ -1,4 +1,4 @@
-Using 10 Steps:
+using these Steps:
 
 1. 對你想建立的 Package 點選右鍵移到”New”並選擇 “Add Code Gen Package”:
 ![1](https://github.com/oscarhuang790512/CodeGenTemplateDart/assets/155708077/769d3428-ac32-4b23-808d-dd97dd989868)
@@ -15,6 +15,11 @@ Using 10 Steps:
 5. 按下 OK 後就能在 Package 中看到完整檔案：
 ![5](https://github.com/oscarhuang790512/CodeGenTemplateDart/assets/155708077/ebdc1887-d036-47b1-bd7a-1cb8b12f753c)
 
+
+(>= version 1.0.6):
+直接執行 "auto_execute_flow.sh" 就能替代第 6 and 7 點步驟
+
+(< version 1.0.6):
 6. 請將 annotations 跟 generate 的 pubspec.yaml 檔案各自 pub get
 ![6](https://github.com/oscarhuang790512/CodeGenTemplateDart/assets/155708077/d9c78201-acf1-4268-beb2-e7a2e079823e)
 

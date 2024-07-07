@@ -20,6 +20,14 @@
     <a href="https://github.com/oscarhuang790512/CodeGenTemplateDart/tree/master">Code Gen Read Me</a>
   ]]></description>
 
+    <change-notes><![CDATA[
+        <h3>Version 1.0.6</h3>
+        <ul>
+            <li>Add "auto_execute_flow.sh" bash to convenient for you to auto pub get and auto increase yaml dependencies</li>
+            <li>just run "sh auto_execute_flow.sh" CLI in the package and will auto setting the code gen environment</li>
+        </ul>
+    ]]></change-notes>
+
     <!-- Product and plugin compatibility requirements.
          Read more: https://plugins.jetbrains.com/docs/intellij/plugin-compatibility.html -->
     <depends>com.intellij.modules.platform</depends>

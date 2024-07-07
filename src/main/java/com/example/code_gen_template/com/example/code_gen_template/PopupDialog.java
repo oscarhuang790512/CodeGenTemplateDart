@@ -5,15 +5,12 @@ import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.PlatformDataKeys;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
-import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.*;
 import org.jetbrains.annotations.NotNull;
 import com.intellij.openapi.command.WriteCommandAction;
 
+import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 
 public class PopupDialog extends AnAction {
 
@@ -34,6 +31,7 @@ public class PopupDialog extends AnAction {
         String packageName = Messages.showInputDialog(project, "Enter package name:", "Code Generate Package", Messages.getQuestionIcon());
         String className = Messages.showInputDialog(project, "Enter class name:", "Code Generate Package", Messages.getQuestionIcon());
         String extensionName = Messages.showInputDialog(project, "Enter gen file Extension name:", "Code Generate Package", Messages.getQuestionIcon());
+        String[] scriptPath = (directory + "/" + packageName + "/auto_execute_flow.sh").split(":");
 
         if (packageName != null && !packageName.trim().isEmpty()) {
             try {
@@ -43,6 +41,37 @@ public class PopupDialog extends AnAction {
             }
 
             Messages.showInfoMessage("Package created successfully", "Success");
+//            int result = Messages.showOkCancelDialog("Need auto run pub get and auto dependencies package?", "Confirm Box", "OK", "Cancel", Messages.getQuestionIcon());
+//            if (result == Messages.OK) {
+//                WriteCommandAction.runWriteCommandAction(project, () -> {
+//                    try {
+//                        // 检查文件是否存在
+//                        File file = new File(scriptPath[1]);
+//                        if (file.exists()) {
+//                            // 构建 ProcessBuilder 对象
+//                            ProcessBuilder processBuilder = new ProcessBuilder("sh", scriptPath[1]);
+//
+//                            // 启动进程
+//                            Process process = processBuilder.start();
+//
+//                            // 等待进程执行完成
+//                            int exitCode = process.waitFor();
+//
+//                            // 打印进程执行结果
+//                            if (exitCode == 0) {
+//                                Messages.showInfoMessage("Shell script execute success", "Success");
+//                            } else {
+//                                Messages.showErrorDialog("Shell script execute failed, error code：" + exitCode, "Error");
+//                            }
+//                        } else {
+//                            Messages.showInfoMessage("文件不存在：" + scriptPath[1], "Fail");
+//                        }
+//                    } catch (IOException | InterruptedException iex) {
+//                        Messages.showErrorDialog(iex.getMessage(), "Error");
+//                        iex.printStackTrace();
+//                    }
+//                });
+//            }
         }
     }
 
@@ -70,49 +99,13 @@ public class PopupDialog extends AnAction {
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
-//            // 选择当前项目内的 pubspec.yaml 文件
-//            PsiFile pubspecFile = choosePubspecFile(project);
-//            if (pubspecFile == null) {
-//                return;
-//            }
-//
-//            // 在 dependencies 后插入新行
-//            insertDependencyLine(pubspecFile);
+            try {
+                createBashForAutomaticExecFlow(currentDirectory);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
         });
     }
-
-//    private PsiFile choosePubspecFile(Project project) {
-//        VirtualFile[] contentRoots = project.getBaseDir().getChildren();
-//        for (VirtualFile contentRoot : contentRoots) {
-//            VirtualFile pubspecFile = contentRoot.findFileByRelativePath("pubspec.yaml");
-//            if (pubspecFile != null && pubspecFile.exists()) {
-//                return PsiManager.getInstance(project).findFile(pubspecFile);
-//            }
-//        }
-//        return null;
-//    }
-//
-//    private void insertDependencyLine(PsiFile pubspecFile) {
-//        // 找到 dependencies 关键字后的位置插入新行
-//        PsiElement[] children = pubspecFile.getChildren();
-//        for (PsiElement child : children) {
-//            if (child.getText().contains("dependencies")) {
-//                PsiElement parent = child.getParent();
-//                if (parent != null) {
-//                    PsiElement nextSibling = parent.getNextSibling();
-//                    if (nextSibling != null) {
-//                        String newLineText = "  new_dependency: ^1.0.0"; // 要插入的新行文本，替换为实际需要插入的内容
-//                        int insertionOffset = nextSibling.getTextOffset();
-//
-//                        PsiDocumentManager documentManager = PsiDocumentManager.getInstance(pubspecFile.getProject());
-//                        documentManager.getDocument(pubspecFile).insertString(insertionOffset, "\n" + newLineText);
-//                        documentManager.commitDocument(documentManager.getDocument(pubspecFile));
-//                        return;
-//                    }
-//                }
-//            }
-//        }
-//    }
 
 
     private void createFlutterPackage(PsiDirectory parentDirectory, String directoryName, String className, String extensionName, String packageName) throws IOException {
@@ -243,6 +236,107 @@ public class PopupDialog extends AnAction {
                         "\n" +
                         "Builder nativeCallGenerateBuilder(BuilderOptions options) =>\n" +
                         "    LibraryBuilder(Generate%s(), generatedExtension: '.%s.g.dart');\n", packageName, className, extensionName)).getBytes()
+        );
+    }
+
+    private void createBashForAutomaticExecFlow(PsiDirectory packageDirectory) throws IOException {
+        packageDirectory.createFile("auto_execute_flow.sh").getVirtualFile().setBinaryContent(
+                ("#!/bin/bash\n" +
+                        "source ~/.bash_profile\n" +
+                        "source ~/.zshrc\n" +
+                        "base_path=\"$(dirname \"$(pwd)\")\"\n" +
+                        "base_path_name=\"$(basename \"$(pwd)\")\"\n" +
+                        "local_path=\"$(pwd)\"\n" +
+                        "annotations_path_name=\"$(find . -maxdepth 1 -type d -name \"*annotations\" | awk -F/ '{print $2}')\"\n" +
+                        "generate_path_name=\"$(find . -maxdepth 1 -type d -name \"*generate\" | awk -F/ '{print $2}')\"\n" +
+                        "\n" +
+                        "find_pubspec() {\n" +
+                        "    local dir=\"$1\"\n" +
+                        "\n" +
+                        "    # Check if pubspec.yaml exists in the current directory\n" +
+                        "    if [ -f \"$dir/pubspec.yaml\" ]; then\n" +
+                        "        echo \"$dir\"\n" +
+                        "        return 0\n" +
+                        "    fi\n" +
+                        "\n" +
+                        "    # If we are at the root directory, stop searching\n" +
+                        "    if [ \"$dir\" = \"/\" ]; then\n" +
+                        "        return 1\n" +
+                        "    fi\n" +
+                        "\n" +
+                        "    # Move to the parent directory and continue searching\n" +
+                        "    find_pubspec \"$(dirname \"$dir\")\"\n" +
+                        "}\n" +
+                        "\n" +
+                        "result=$(find_pubspec $local_path)\n" +
+                        "\n" +
+                        "run_pub_get() {\n" +
+                        "  cd $local_path/$annotations_path_name\n" +
+                        "  flutter pub get\n" +
+                        "  cd $local_path/$generate_path_name\n" +
+                        "  flutter pub get\n" +
+                        "}\n" +
+                        "\n" +
+                        "add_dependencies_in_yaml(){\n" +
+                        "  cd $result\n" +
+                        "  FOUND_SOURCE_GEN=0\n" +
+                        "  FOUND_CODE_BUILDER=0\n" +
+                        "  FOUND_BUILD_RUNNER=0\n" +
+                        "  FOUND_ANNOTATIONS=0\n" +
+                        "  FOUND_GENERATE=0\n" +
+                        "  if grep -q 'source_gen:' pubspec.yaml; then\n" +
+                        "      FOUND_SOURCE_GEN=1\n" +
+                        "  fi\n" +
+                        "  if grep -q 'code_builder:' pubspec.yaml; then\n" +
+                        "      FOUND_CODE_BUILDER=1\n" +
+                        "  fi\n" +
+                        "  if grep -q 'build_runner:' pubspec.yaml; then\n" +
+                        "      FOUND_BUILD_RUNNER=1\n" +
+                        "  fi\n" +
+                        "  if grep -q $annotations_path_name pubspec.yaml; then\n" +
+                        "      FOUND_ANNOTATIONS=1\n" +
+                        "  fi\n" +
+                        "  if grep -q $generate_path_name pubspec.yaml; then\n" +
+                        "      FOUND_GENERATE=1\n" +
+                        "  fi\n" +
+                        "  find . -maxdepth 1 -type f -name \"pubspec.yaml\" | while read -r file; do\n" +
+                        "      awk '\n" +
+                        "      {\n" +
+                        "        print\n" +
+                        "      }\n" +
+                        "      /^dependencies:$/ {\n" +
+                        "          if('$FOUND_SOURCE_GEN' == 0){\n" +
+                        "            print \"  source_gen: ^1.5.0\"\n" +
+                        "          }\n" +
+                        "          if('$FOUND_CODE_BUILDER' == 0){\n" +
+                        "            print \"  code_builder: ^4.10.0\"\n" +
+                        "          }\n" +
+                        "          if('$FOUND_ANNOTATIONS' == 0){\n" +
+                        "            print \"  '$annotations_path_name': \"\n" +
+                        "            print \"    path: '$base_path_name'/'$annotations_path_name'\"\n" +
+                        "          }\n" +
+                        "      }\n" +
+                        "      /^dev_dependencies:$/ {\n" +
+                        "          if('$FOUND_BUILD_RUNNER' == 0){\n" +
+                        "            print \"  build_runner: ^2.4.8\"\n" +
+                        "          }\n" +
+                        "          if('$FOUND_GENERATE' == 0){\n" +
+                        "            print \"  '$generate_path_name': \"\n" +
+                        "            print \"    path: '$base_path_name'/'$generate_path_name'\"\n" +
+                        "          }\n" +
+                        "      }\n" +
+                        "      ' \"$file\" > temp_file && mv temp_file \"$file\"\n" +
+                        "  done\n" +
+                        "  flutter pub get\n" +
+                        "}\n" +
+                        "\n" +
+                        "run_pub_get\n" +
+                        "if [ -n \"$result\" ]; then\n" +
+                        "    echo \"pubspec.yaml found in: $result\"\n" +
+                        "    add_dependencies_in_yaml\n" +
+                        "else\n" +
+                        "    echo \"pubspec.yaml not found\"\n" +
+                        "fi\n").getBytes()
         );
     }
 }
